@@ -1,0 +1,40 @@
+# VisionNorth Ecosystem — Root Workspace
+# Los subproyectos tienen sus propios repos independientes
+
+# Proyectos con repo propio
+/projects/BACKBONE/
+/projects/PADIM-scraper/
+
+# Directorios del sistema
+.profiles/
+.projects/
+
+# Datos y config sensibles
+.env
+*.key
+*credentials*
+*secret*
+*token*
+passwords.txt
+
+# Logs
+*.log
+/logs/
+
+# Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+/tmp/
+*.tmp
