@@ -38,10 +38,11 @@ cp "$SCRIPTS_DIR/nexus-christmas-ssl.nginx.conf" "$SITES_AVAILABLE/nexus-christm
 ln -sf "$SITES_AVAILABLE/nexus-christmas-ssl" "$SITES_ENABLED/nexus-christmas-ssl"
 echo "   ✅ nexus-christmas-ssl (con SSL)"
 
-# 4. DESHABILITAR: admin-nexus (remover su listen 443 default)
-echo "4. Removiendo admin-nexus (ya no es necesario su SSL catch-all)..."
-rm -f "$SITES_ENABLED/admin-nexus"
-echo "   ✅ admin-nexus deshabilitado de sites-enabled"
+# 4. admin-nexus se queda (00-default-443-catch-all es ahora el default 443)
+#    admin-nexus solo responde a admin.nexus.christmas
+echo "4. admin-nexus intacto — responde solo a admin.nexus.christmas"
+echo "   00-default-443-catch-all es el nuevo default (empieza con 00-)"
+echo "   ✅ admin-nexus preservado"
 
 # 5. TEST: verificar config de nginx
 echo ""

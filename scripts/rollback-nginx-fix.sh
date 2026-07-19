@@ -18,12 +18,9 @@ rm -f "$SITES_AVAILABLE/blog-enmexico-ssl" 2>/dev/null && echo "   ✅ Removido 
 rm -f "$SITES_ENABLED/nexus-christmas-ssl" 2>/dev/null && echo "   ✅ Removido nexus-christmas-ssl"
 rm -f "$SITES_AVAILABLE/nexus-christmas-ssl" 2>/dev/null && echo "   ✅ Removido nexus-christmas-ssl"
 
-# 2. Restaurar admin-nexus (si fue deshabilitado)
-echo "2. Restaurando admin-nexus..."
-if [ -f "$SITES_AVAILABLE/admin-nexus" ]; then
-    ln -sf "$SITES_AVAILABLE/admin-nexus" "$SITES_ENABLED/admin-nexus" 2>/dev/null
-    echo "   ✅ admin-nexus re-habilitado"
-fi
+# 2. admin-nexus nunca fue deshabilitado (solo el catch-all lo reemplazó como default)
+echo "2. admin-nexus intacto (no requiere restauración)"
+echo "   ✅ admin-nexus sigue activo"
 
 # 3. Verificar config
 echo "3. Verificando config..."
