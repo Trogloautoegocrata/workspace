@@ -1,0 +1,355 @@
+{
+	http_port 8081
+	auto_https off
+	admin off
+}
+
+http://ui.visionnorth.mx:8081 {
+	reverse_proxy localhost:8080
+	encode gzip zstd
+
+	handle /previews/* {
+		root * /opt/html-previews
+		file_server
+	}
+}
+
+http://d.visionnorth.mx:8081 {
+	handle /webhooks/* {
+	reverse_proxy localhost:8644 {
+			header_up Host localhost
+			header_up Origin "http://localhost:8644"
+		}
+	}
+
+	handle {
+		respond "VisionNorth API - Sistema operativo. WebUI: https://webui.visionnorth.mx/" 200
+	}
+
+	encode gzip zstd
+}
+http://webui.visionnorth.mx:8081 {
+
+	@websockets {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	reverse_proxy @websockets localhost:8787
+	reverse_proxy localhost:8787
+	encode gzip zstd
+}
+
+http://workspace.visionnorth.mx:8081 {
+	reverse_proxy localhost:7701
+	encode gzip zstd
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+http://prometheus.visionnorth.mx:8081 {
+	basic_auth {
+		admin $2b$12$fvyaffa1nxBlq9ciTfRr3u7hwpNgOmZtoz0u0dzgDr7pfsULvRGR.
+	}
+	reverse_proxy localhost:9090
+}
+
+http://grafana.visionnorth.mx:8081 {
+	basic_auth {
+		admin $2b$12$fvyaffa1nxBlq9ciTfRr3u7hwpNgOmZtoz0u0dzgDr7pfsULvRGR.
+	}
+	reverse_proxy localhost:3000
+}
+
+http://back-bone.dev:8081 {
+	root * /home/polaris/workspace/projects/BACKBONE/frontend
+	encode gzip zstd
+
+	handle /v1/* {
+	reverse_proxy localhost:8005
+	}
+
+	handle /privacy {
+		rewrite /privacy.html
+		file_server
+	}
+	handle /terms {
+		rewrite /terms.html
+		file_server
+	}
+
+	handle /docs {
+		rewrite /docs.html
+		file_server
+	}
+
+	handle {
+	try_files {path} /index.html
+		file_server
+	}
+}
+
+http://www.back-bone.dev:8081 {
+	redir https://back-bone.dev{uri} permanent
+}
+
+http://api.back-bone.dev:8081 {
+	reverse_proxy localhost:8005
+	encode gzip zstd
+}
+
+http://crm.visionnorth.mx:8081 {
+	handle /v1/* {
+	reverse_proxy localhost:8005
+	}
+
+	handle /brand/* {
+		root * /home/polaris/workspace/public
+		file_server
+	}
+
+	handle /Guia-7-Errores-Pipeline-Inmobiliario-Polaris.pdf {
+		root * /home/polaris/workspace/public/downloads
+		file_server
+	}
+	handle /guia {
+		redir http://crm.visionnorth.mx:8081/Guia-7-Errores-Pipeline-Inmobiliario-Polaris.pdf permanent
+	}
+
+	handle {
+		root * /home/polaris/workspace/public
+	try_files {path} /polaris-landing-premium.html
+		file_server
+	}
+
+	encode gzip zstd
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+	}
+}
+
+http://docs.back-bone.dev:8081 {
+	root * /home/polaris/workspace/projects/BACKBONE/docs
+	file_server
+	encode gzip zstd
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		-Server
+	}
+}
+
+http://socios.visionnorth.mx:8081 {
+	root * /home/polaris/workspace/projects/BACKBONE/frontend
+	file_server
+	try_files {path} /socios-v6-ecosistema.html
+	encode gzip zstd
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+	}
+}
+
+http://padim.enmexico.casa:8081 {
+
+	root * /home/polaris/workspace/projects/BACKBONE/padim/site
+
+
+
+	handle /docs/* {
+
+		root * /home/polaris/workspace/projects/BACKBONE/padim/docs
+
+		file_server
+
+	}
+
+
+
+	handle /repo {
+
+		redir https://github.com/PADIM-MX/padim permanent
+
+	}
+
+
+
+	handle {
+
+		try_files {path} {path}.html /index.html
+
+		file_server
+
+	}
+
+
+
+	header {
+
+		-Server
+
+		X-Content-Type-Options "nosniff"
+
+		X-Frame-Options "DENY"
+
+	}
+
+}
+
+http://axis.visionnorth.mx:8081 {
+	root * /home/polaris/workspace/projects/axis/landing
+	file_server
+	try_files {path} /index.html
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		-Server
+	}
+}
+
+http://brand.visionnorth.mx:8081 {
+	root * /home/polaris/workspace/public/visionnorth-ads
+	file_server
+	encode gzip zstd
+}
+
+# ── QUASAR — Mapa de Datos Inmobiliarios MX ──
+http://quasar.back-bone.dev:8081 {
+	encode gzip zstd
+
+	@api path /api/*
+	handle @api {
+		uri strip_prefix /api
+	reverse_proxy localhost:8766
+	}
+
+	handle {
+		root * /home/polaris/workspace/projects/quasar
+	try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+http://quasar.enmexico.casa:8081 {
+	encode gzip zstd
+
+	@api path /api/*
+	handle @api {
+		uri strip_prefix /api
+	reverse_proxy localhost:8766
+	}
+
+	handle {
+		root * /home/polaris/workspace/projects/quasar
+	try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+http://landing.visionnorth.mx:8081 {
+	root * /home/polaris/workspace/public
+	file_server
+	try_files {path} /visionnorth-v3.html
+	encode gzip zstd
+}
+
+http://polaris.pw:8081 {
+	root * /home/polaris/workspace/public
+	file_server
+	try_files {path}.html {path} /polaris-v0.6.html
+	encode gzip zstd
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+http://www.polaris.pw:8081 {
+	redir https://polaris.pw{uri} permanent
+}
+
+http://blog.polaris.pw:8081 {
+	root * /home/polaris/workspace/public/blog-polaris
+	file_server
+	encode gzip zstd
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+http://glosario.polaris.pw:8081 {
+	root * /home/polaris/workspace/public/glosario-polaris
+	try_files {path} {path}/index.html /index.html
+	file_server
+	encode gzip zstd
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+}
+
+http://pulsar.polaris.pw:8081 {
+    reverse_proxy localhost:8200
+    encode gzip zstd
+    header {
+        -Server
+        X-Content-Type-Options "nosniff"
+    }
+}
+
+http://n8n.visionnorth.mx:8081 {
+	reverse_proxy localhost:5678
+	encode gzip zstd
+}
+
+http://stellar.visionnorth.mx:8081 {
+    reverse_proxy localhost:8642
+    encode gzip zstd
+}
+
+# ── ASTRA — Inmobiliaria de Nueva Generación ──
+http://astra.visionnorth.mx:8081 {
+    root * /home/polaris/workspace/public/astra
+    file_server
+    encode gzip zstd
+    header {
+        -Server
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+}
+
+# ── AGENTE DE SOPORTE IA ──
+import blog-padim.conf
+import agente-soporte.conf
+
+# ── STATUS — Dashboard de Salud del Ecosistema ──
+http://status.visionnorth.mx:8081 {
+    root * /home/polaris/workspace/public/system-health
+    file_server
+    encode gzip zstd
+    header {
+        -Server
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+}
+import graph-caddy.conf

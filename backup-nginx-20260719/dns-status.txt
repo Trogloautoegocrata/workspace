@@ -1,0 +1,21 @@
+# Respaldo DNS — 2026-07-19T09:37:40Z
+
+### blog.enmexico.casa
+172.67.208.36
+104.21.15.223
+
+### nexus.christmas
+74.208.40.123
+
+### enmexico.casa
+172.67.208.36
+104.21.15.223
+
+### padim.enmexico.casa
+172.67.208.36
+104.21.15.223
+
+### nexus.visionnorth.mx
+104.21.65.221
+172.67.193.130
+

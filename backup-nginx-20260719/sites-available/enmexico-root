@@ -1,0 +1,39 @@
+server {
+    server_name enmexico.casa www.enmexico.casa;
+
+    root /home/polaris/workspace/public/enmexico;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /padim {
+        return 301 http://padim.enmexico.casa$request_uri;
+    }
+
+    location /blog {
+        return 301 http://blog.enmexico.casa$request_uri;
+    }
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/enmexico.casa/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/enmexico.casa/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+    if ($host = enmexico.casa) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    listen [::]:80;
+    server_name enmexico.casa www.enmexico.casa;
+    return 404; # managed by Certbot
+
+
+}
