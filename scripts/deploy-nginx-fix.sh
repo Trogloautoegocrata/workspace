@@ -1,5 +1,6 @@
 #!/bin/bash
 # deploy-nginx-fix.sh — Corrige catch-all 443 y agrega SSL para blog.enmexico.casa y nexus.christmas
+# v2 — Remueve el viejo nexus-christmas para evitar conflicto de server_name en puerto 80
 # Ejecutar: sudo bash /home/polaris/workspace/scripts/deploy-nginx-fix.sh
 
 set -e
@@ -9,36 +10,38 @@ echo "  🔧 DEPLOY: Fix nginx catch-all en 443"
 echo "═══════════════════════════════════════════"
 echo ""
 
-BACKUP_DIR="/home/polaris/workspace/backup-nginx-20260719"
-TMP_DIR="/home/polaris/workspace/tmp"
+SCRIPTS_DIR="/home/polaris/workspace/scripts"
 SITES_AVAILABLE="/etc/nginx/sites-available"
 SITES_ENABLED="/etc/nginx/sites-enabled"
 
+# 0. REMOVER: viejo nexus-christmas (solo puerto 80, causa conflicto con el nuevo)
+echo "0. Removiendo viejo nexus-christmas (puerto 80 solo)..."
+rm -f "$SITES_ENABLED/nexus-christmas"
+rm -f "$SITES_AVAILABLE/nexus-christmas"
+echo "   ✅ nexus-christmas (viejo) eliminado"
+
 # 1. INSTALAR: catch-all default que rechaza conexiones
 echo "1. Instalando catch-all default para 443..."
-cp "$TMP_DIR/00-default-443-catch-all.nginx.conf" "$SITES_AVAILABLE/00-default-443-catch-all"
+cp "$SCRIPTS_DIR/00-default-443-catch-all.nginx.conf" "$SITES_AVAILABLE/00-default-443-catch-all"
 ln -sf "$SITES_AVAILABLE/00-default-443-catch-all" "$SITES_ENABLED/00-default-443-catch-all"
 echo "   ✅ 00-default-443-catch-all"
 
 # 2. INSTALAR: blog.enmexico.casa SSL
 echo "2. Instalando SSL para blog.enmexico.casa..."
-cp "$TMP_DIR/blog-enmexico-ssl.nginx.conf" "$SITES_AVAILABLE/blog-enmexico-ssl"
+cp "$SCRIPTS_DIR/blog-enmexico-ssl.nginx.conf" "$SITES_AVAILABLE/blog-enmexico-ssl"
 ln -sf "$SITES_AVAILABLE/blog-enmexico-ssl" "$SITES_ENABLED/blog-enmexico-ssl"
 echo "   ✅ blog-enmexico-ssl"
 
-# 3. INSTALAR: nexus.christmas SSL
+# 3. INSTALAR: nexus.christmas SSL (reemplaza al viejo)
 echo "3. Instalando SSL para nexus.christmas..."
-cp "$TMP_DIR/nexus-christmas-ssl.nginx.conf" "$SITES_AVAILABLE/nexus-christmas-ssl"
+cp "$SCRIPTS_DIR/nexus-christmas-ssl.nginx.conf" "$SITES_AVAILABLE/nexus-christmas-ssl"
 ln -sf "$SITES_AVAILABLE/nexus-christmas-ssl" "$SITES_ENABLED/nexus-christmas-ssl"
-echo "   ✅ nexus-christmas-ssl"
+echo "   ✅ nexus-christmas-ssl (con SSL)"
 
 # 4. DESHABILITAR: admin-nexus (remover su listen 443 default)
 echo "4. Removiendo admin-nexus (ya no es necesario su SSL catch-all)..."
-# No eliminamos el archivo, solo removemos del sites-enabled
 rm -f "$SITES_ENABLED/admin-nexus"
 echo "   ✅ admin-nexus deshabilitado de sites-enabled"
-echo "   ⚠️  admin.nexus.christmas ya no será accesible via nginx"
-echo "   ⚠️  Si se necesita: re-habilitar con ln -sf"
 
 # 5. TEST: verificar config de nginx
 echo ""
