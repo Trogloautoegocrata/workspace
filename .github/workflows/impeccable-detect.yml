@@ -1,0 +1,155 @@
+# =============================================================================
+# impeccable-detect.yml — Gate 4: CI/CD Quality Gate for Design
+# GENERIC TEMPLATE — Works with any repo in the ecosystem
+# =============================================================================
+# Trigger:     pull_request + push to main
+# Job:         design-quality (warning mode initially)
+# Tool:        npx impeccable detect --json
+# Artifact:    impeccable-report.json
+# Variables:   THRESHOLD_WARN=70, PATHS_TO_SCAN='.'
+# =============================================================================
+
+name: "🔍 Impeccable Detect — Design Quality Gate"
+
+"on":
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  THRESHOLD_WARN: 70
+  PATHS_TO_SCAN: '.'
+
+jobs:
+  design-quality:
+    name: "🎨 Design Quality Check"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "⚡ Setup Node.js 22"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: "📦 Install dependencies (if needed)"
+        run: |
+          if [ -f package.json ]; then
+            npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts 2>/dev/null || true
+          fi
+
+      - name: "🔬 Run Impeccable Detect"
+        id: impeccable
+        continue-on-error: true
+        run: |
+          echo "::group::Impeccable Detect — Scanning ${{ env.PATHS_TO_SCAN }}"
+          npx --yes impeccable detect ${{ env.PATHS_TO_SCAN }} --json > impeccable-report.json 2>&1
+          echo "::endgroup::"
+          echo "report_path=impeccable-report.json" >> $GITHUB_OUTPUT
+
+      - name: "📊 Parse and evaluate report"
+        id: evaluate
+        run: |
+          echo "::group::Evaluating Design Quality Report"
+
+          if [ ! -f impeccable-report.json ]; then
+            echo "No report generated — skipping evaluation"
+            echo "score=0" >> $GITHUB_OUTPUT
+            echo "summary=No report generated" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          SCORE=$(python3 -c "
+          import json
+          with open('impeccable-report.json') as f:
+              data = json.load(f)
+          score = data.get('score', data.get('overall_score', 0))
+          print(score)
+          ")
+
+          THRESHOLD=${{ env.THRESHOLD_WARN }}
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+
+          if [ "$SCORE" -ge "$THRESHOLD" ]; then
+            echo "✅ Design quality score $SCORE — passes threshold $THRESHOLD"
+            echo "summary=✅ Score $SCORE — passes threshold $THRESHOLD" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Design quality score $SCORE — below threshold $THRESHOLD"
+            echo "summary=⚠️ Score $SCORE — below threshold $THRESHOLD" >> $GITHUB_OUTPUT
+          fi
+
+          python3 -c "
+          import json
+          with open('impeccable-report.json') as f:
+              data = json.load(f)
+          issues = data.get('issues', data.get('findings', []))
+          if issues:
+              print(f'Found {len(issues)} issue(s):')
+              for i, issue in enumerate(issues[:20]):
+                  loc = issue.get('file', issue.get('location', 'unknown'))
+                  desc = issue.get('message', issue.get('description', issue.get('rule', 'unknown')))
+                  sev = issue.get('severity', issue.get('level', 'info'))
+                  print(f'  [{sev}] {loc}: {desc}')
+              if len(issues) > 20:
+                  print(f'  ... and {len(issues) - 20} more issue(s)')
+          "
+
+          echo "::endgroup::"
+
+      - name: "💬 Comment findings on PR"
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'impeccable-report.json';
+            let commentBody = '';
+
+            try {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              const score = report.score || report.overall_score || 'N/A';
+              const issues = report.issues || report.findings || [];
+
+              commentBody = `## 🎨 Impeccable Design Quality Report\n\n`;
+              commentBody += `**Score:** ${score} / 100\n`;
+              commentBody += `**Threshold:** ${{ env.THRESHOLD_WARN }}\n\n`;
+
+              if (issues.length === 0) {
+                commentBody += `✅ No design issues found — looking sharp!\n`;
+              } else {
+                commentBody += `**${issues.length} issue(s) found:**\n\n`;
+                commentBody += `| Severity | File | Description |\n`;
+                commentBody += `|----------|------|-------------|\n`;
+                issues.slice(0, 30).forEach(issue => {
+                  const sev = issue.severity || issue.level || 'info';
+                  const file = issue.file || issue.location || 'unknown';
+                  const desc = (issue.message || issue.description || issue.rule || '').substring(0, 100);
+                  const icon = sev === 'error' ? '🔴' : sev === 'warning' ? '🟡' : '🔵';
+                  commentBody += `| ${icon} ${sev} | ${file} | ${desc} |\n`;
+                });
+                if (issues.length > 30) {
+                  commentBody += `| ... | *${issues.length - 30} more* | *Download artifact for full report* |\n`;
+                }
+              }
+            } catch (e) {
+              commentBody = `## 🎨 Impeccable Design Quality Report\n\n⚠️ Could not parse report: ${e.message}\n`;
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+
+      - name: "📤 Upload report as artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: impeccable-report
+          path: impeccable-report.json
+          if-no-files-found: warn
+          retention-days: 30
