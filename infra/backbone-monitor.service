@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitor BACKBONE con alertas Telegram
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/polaris/workspace/scripts/monitor-backbone.py
+WorkingDirectory=/home/polaris/workspace
+Restart=always
+RestartSec=10
+User=polaris
+
+[Install]
+WantedBy=multi-user.target
