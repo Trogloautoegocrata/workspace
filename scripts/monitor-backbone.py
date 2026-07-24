@@ -61,8 +61,15 @@ class Monitor:
 
     def _load_state(self):
         if STATE_FILE.exists():
-            try: return json.loads(STATE_FILE.read_text())
-            except: pass
+            try:
+                raw = json.loads(STATE_FILE.read_text())
+                for cid in raw:
+                    ds = raw[cid].get("down_since")
+                    if ds and isinstance(ds, str):
+                        raw[cid]["down_since"] = datetime.fromisoformat(ds)
+                return raw
+            except:
+                pass
         return {cid: {"down_since": None, "alerted": False, "last_ok": None} for cid in CHECKS}
 
     def _save_state(self):
