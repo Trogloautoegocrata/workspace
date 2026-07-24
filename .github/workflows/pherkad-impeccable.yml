@@ -1,0 +1,25 @@
+# Pherkad — Design Quality Gate (Impeccable)
+"on":
+  pull_request:
+    paths:
+      - "projects/pherkad/**"
+      - ".github/workflows/pherkad-impeccable.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "projects/pherkad/**"
+      - ".github/workflows/pherkad-impeccable.yml"
+
+jobs:
+  detect:
+    name: 🎨 Impeccable Design Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 🔍 Ejecutar Impeccable detect
+        run: npx impeccable detect projects/pherkad/
+        working-directory: ./
+        continue-on-error: false
